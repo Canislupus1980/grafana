@@ -77,7 +77,7 @@ services:
       GF_AUTH_GENERIC_OAUTH_USE_PKCE: true
       TLS_SKIP_VERIFY_INSECURE: true
       GF_AUTH_DISABLE_LOGIN_FORM: true
-      GF_AUTH_OAUTH_AUTO_LOGIN: true
+      #GF_AUTH_OAUTH_AUTO_LOGIN: true
       #GF_AUTH_DISABLE_SIGNOUT_MENU: true
 
       GF_DATABASE_HOST: 'pg_grafana:5432'
