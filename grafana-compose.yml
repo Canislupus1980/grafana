@@ -3,7 +3,7 @@ version: '3.8'
 services:
   nginx:
     restart: always
-    image: nginx:latest
+    image: nginx:alpine
     container_name: nginx
     hostname: nginx
     volumes:
@@ -12,7 +12,11 @@ services:
     ports:
      - 80:80
      - 443:443
-     
+    networks:
+      my-net:
+       aliases:
+        - proxy
+
   pg_data_wh:
     container_name: pg_data_wh
     image: postgres:15
@@ -21,11 +25,15 @@ services:
       POSTGRES_DB: my_data_wh_db
       POSTGRES_USER: my_data_wh_user
       POSTGRES_PASSWORD: my_data_wh_pwd
+    networks:
+      my-net:
+       aliases:
+        - db1-graf
     ports:
       - "5488:5432"
     volumes:
       - pg_data_wh:/var/lib/postgresql/data
-      
+
   pg_grafana:
     container_name: pg_grafana
     image: postgres:15
@@ -33,43 +41,61 @@ services:
     environment:
       POSTGRES_DB: my_grafana_db
       POSTGRES_USER: my_grafana_user
-      POSTGRES_PASSWORD: my_grafana_pwd
+      POSTGRES_PASSWORD: ***
+    networks:
+      my-net:
+       aliases:
+        - db2-graf
     ports:
       - "5499:5432"
     volumes:
       - ./pg_grafana:/var/lib/postgresql/data
 
+
   grafana:
     container_name: grafana
     image: grafana/grafana:latest
-    user: "0:0"
-    environment:
-      GF_DATABASE_TYPE: postgres
-      GF_DATABASE_HOST: pg_grafana:5432
-      GF_DATABASE_NAME: my_grafana_db
-      GF_DATABASE_USER: my_grafana_user
-      GF_DATABASE_PASSWORD: my_grafana_pwd
-      GF_DATABASE_SSL_MODE: disable
-      GF_AUTH_GENERIC_OAUTH_ENABLED: 'True'
-      GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: 'True'     
-      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: 'grafana'
-      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: 'Your Client secret'
-      GF_AUTH_GENERIC_OAUTH_ENABLED: 'True'
-      GF_AUTH_GENERIC_OAUTH_NAME: 'SSO'
-      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(roles[*], 'Admin') && 'Admin' || contains(roles[*], 'Editor') && 'Editor' || 'Viewer'"
-      GF_AUTH_GENERIC_OAUTH_SCOPES: 'profile'
-      GF_AUTH_GENERIC_OAUTH_AUTH_URL: "https://sso.domen.com/realms/dashboard/protocol/openid-connect/auth"
-      GF_AUTH_GENERIC_OAUTH_API_URL: "https://sso.domen.com/realms/dashboard/protocol/openid-connect/userinfo"
-      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "https://sso.domen.com/realms/dashboard/protocol/openid-connect/token"
-      GF_SERVER_DOMAIN: 'dashboard.domen.com'
-      GF _SERVER_ROOT_URL: "https://dashboarprofiled.domen.com"
     restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ***
+
+      GF_SERVER_HTTP_PORT: 3000
+      GF_SERVER_DOMAIN: domen.com
+      GF_SERVER_ROOT_URL: 'http://domen.com'
+      GF_SERVER_SERVE_FROM_SUB_PATH: true
+      GF_AUTH_GENERIC_OAUTH_ENABLED: true
+      GF_AUTH_GENERIC_OAUTH_NAME: SingleSignOn
+      GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: true
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: 'grafana'
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: '***'
+      GF_AUTH_GENERIC_OAUTH_SCOPES: email openid profile
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: "https://domen.com/realms/sso.admin/protocol/openid-connect/auth"
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "https://domen.com/realms/sso.admin/protocol/openid-connect/token"
+      GF_AUTH_GENERIC_OAUTH_API_URL: "https://domen.com/realms/sso.admin/protocol/openid-connect/userinfo"
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(roles[*], 'admin') && 'Admin' || contains(roles[*], 'editor') && 'Editor' || 'Viewer'"
+      GF_AUTH_GENERIC_OAUTH_USE_PKCE: true
+      TLS_SKIP_VERIFY_INSECURE: true
+      GF_AUTH_DISABLE_LOGIN_FORM: true
+      GF_AUTH_OAUTH_AUTO_LOGIN: true
+      #GF_AUTH_DISABLE_SIGNOUT_MENU: true
+
+      GF_DATABASE_HOST: 'pg_grafana:5432'
+      GF_DATABASE_NAME: 'my_grafana_db'
+      GF_DATABASE_PASSWORD: '***'
+      GF_DATABASE_USER: 'my_grafana_user'
     depends_on:
         - pg_grafana
+        - nginx
+    networks:
+      my-net:
+       aliases:
+        - graf
     ports:
-      - 3000:3000
-    volumes:
-      - ./grafana:/var/lib/grafana
+        - 3000:3000
+networks:
+  my-net:
+    external: true
 volumes:
   pg_grafana:
     driver: local
