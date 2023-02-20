@@ -62,7 +62,7 @@ services:
       GF_AUTH_GENERIC_OAUTH_API_URL: "https://sso.domen.com/realms/dashboard/protocol/openid-connect/userinfo"
       GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "https://sso.domen.com/realms/dashboard/protocol/openid-connect/token"
       GF_SERVER_DOMAIN: 'dashboard.domen.com'
-      GF _SERVER_ROOT_URL: "https://dashboarprofiled.becloud.by"
+      GF _SERVER_ROOT_URL: "https://dashboarprofiled.domen.com"
     restart: unless-stopped
     depends_on:
         - pg_grafana
